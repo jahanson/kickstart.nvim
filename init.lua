@@ -519,6 +519,9 @@ require('lazy').setup({
       --    That is to say, every time a new file is opened that is associated with
       --    an lsp (for example, opening `main.rs` is associated with `rust_analyzer`) this
       --    function will be executed to configure the current buffer
+      local configs = require 'lspconfig.configs'
+      local lspconfig = require 'lspconfig' -- Ensure lspconfig is required
+
       vim.api.nvim_create_autocmd('LspAttach', {
         group = vim.api.nvim_create_augroup('kickstart-lsp-attach', { clear = true }),
         callback = function(event)
@@ -704,8 +707,66 @@ require('lazy').setup({
             },
           },
         },
+        bashls = {
+          -- NOTE: No 'cmd' needed if mason-lspconfig handles installation and path.
+          settings = {
+            bashIde = {
+              -- Glob pattern for finding and parsing shell script files in the workspace.
+              -- Used by the background analysis features across files.
+
+              -- Prevent recursive scanning which will cause issues when opening a file
+              -- directly in the home directory (e.g. ~/foo.sh).
+              --
+              -- Default upstream pattern is "**/*@(.sh|.inc|.bash|.command)".
+              globPattern = vim.env.GLOB_PATTERN or '*@(.sh|.inc|.bash|.command)',
+            },
+          },
+          filetypes = { 'bash', 'sh', 'zsh' }, -- Added zsh as it's often relevant
+          root_dir = function(fname)
+            -- Correctly handle the return value of vim.fs.find (it's a list or nil)
+            local git_root_marker = vim.fs.find({ '.git' }, { path = fname, upward = true, type = 'directory' })
+            if git_root_marker and #git_root_marker > 0 then
+              return vim.fs.dirname(git_root_marker[1])
+            end
+            -- Fallback: You could return the file's directory or cwd if no .git found
+            -- return vim.fs.dirname(fname)
+            -- return vim.loop.cwd()
+            return nil -- Standard behavior if no root is found
+          end,
+          single_file_support = true,
+        },
       }
 
+      -- Register fish_lsp if it doesn't exist yet
+      if not configs.fish_lsp then
+        configs.fish_lsp = {
+          default_config = {
+            cmd = { 'fish-lsp', 'start' },
+            cmd_env = { fish_lsp_show_client_popups = false },
+            filetypes = { 'fish' },
+            root_dir = function(fname)
+               local git_root_marker = vim.fs.find({'.git'}, { path = fname, upward = true, type = 'directory'})
+               if git_root_marker and #git_root_marker > 0 then
+                 return vim.fs.dirname(git_root_marker[1])
+               end
+               return nil
+            end,
+            single_file_support = true,
+          },
+          docs = { description = [[Fish Language Server (https://github.com/ndonfris/fish-lsp)]] },
+        }
+      end
+
+      -- Manually setup fish_lsp, passing the defined capabilities
+      lspconfig.fish_lsp.setup {
+        capabilities = capabilities,
+        -- Add any specific overrides for fish_lsp here if needed, otherwise inherits from default_config
+        -- For example:
+        -- on_attach = function(client, bufnr)
+        --   print("Fish LSP attached to buffer", bufnr)
+        --   -- Add fish-specific keymaps if necessary
+        -- end,
+      }
       -- Ensure the servers and tools above are installed
       --
       -- To check the current status of installed tools and/or manually install
@@ -722,6 +783,7 @@ require('lazy').setup({
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
+        'bashls',
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
