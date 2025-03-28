@@ -745,11 +745,11 @@ require('lazy').setup({
             cmd_env = { fish_lsp_show_client_popups = false },
             filetypes = { 'fish' },
             root_dir = function(fname)
-               local git_root_marker = vim.fs.find({'.git'}, { path = fname, upward = true, type = 'directory'})
-               if git_root_marker and #git_root_marker > 0 then
-                 return vim.fs.dirname(git_root_marker[1])
-               end
-               return nil
+              local git_root_marker = vim.fs.find({ '.git' }, { path = fname, upward = true, type = 'directory' })
+              if git_root_marker and #git_root_marker > 0 then
+                return vim.fs.dirname(git_root_marker[1])
+              end
+              return nil
             end,
             single_file_support = true,
           },
@@ -784,6 +784,8 @@ require('lazy').setup({
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
         'bashls',
+        'shfmt',
+        'shellcheck',
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -836,6 +838,9 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
+        bash = { 'shfmt' },
+        sh = { 'shfmt' },
+        fish = { 'fish_indent' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
