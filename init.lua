@@ -675,7 +675,7 @@ require('lazy').setup({
         -- clangd = {},
         -- gopls = {},
         -- pyright = {},
-        -- rust_analyzer = {},
+        rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
@@ -691,7 +691,15 @@ require('lazy').setup({
         denols = {
           root_dir = require('lspconfig').util.root_pattern { 'deno.json', 'deno.jsonc' },
           single_file_support = false,
-          settings = {},
+          settings = {
+            deno = {
+              enable = true, -- General enable flag (usually default)
+              lint = true, -- <<< Explicitly enable linting via the LSP
+              unstable = false, -- Set to true if your project uses unstable Deno APIs
+              -- You can add other Deno-specific settings here if needed
+              -- importMap = "./import_map.json" -- Example
+            },
+          },
         },
         lua_ls = {
           -- cmd = { ... },
@@ -783,9 +791,12 @@ require('lazy').setup({
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
-        'bashls',
-        'shfmt',
-        'shellcheck',
+        'bashls', -- Bash language server
+        'shfmt', -- Bash formatter
+        'shellcheck', -- Bash linter
+        'denols', -- Deno language server for typescript
+        'markdownlint',
+        'rust-analyzer', -- Rust language server
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -841,6 +852,7 @@ require('lazy').setup({
         bash = { 'shfmt' },
         sh = { 'shfmt' },
         fish = { 'fish_indent' },
+        rust = { 'rustfmt' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
@@ -1055,6 +1067,7 @@ require('lazy').setup({
         'python',
         'query',
         'regex',
+        'rust',
         'toml',
         'tsx',
         'typescript',
@@ -1093,7 +1106,7 @@ require('lazy').setup({
   --
   -- require 'kickstart.plugins.debug',
   -- require 'kickstart.plugins.indent_line',
-  -- require 'kickstart.plugins.lint',
+  require 'kickstart.plugins.lint',
   -- require 'kickstart.plugins.autopairs',
   require 'kickstart.plugins.neo-tree',
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
